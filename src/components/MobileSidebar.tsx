@@ -313,22 +313,30 @@ export const MobileSidebar: React.FC = () => {
             <span className="text-slate-500 font-medium text-[11px]">Tema Tampilan:</span>
             <div className="flex items-center bg-white dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs">
               <button
+                id="mobile-theme-light-btn"
                 onClick={() => setTheme('light')}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold cursor-pointer transition ${
-                  theme === 'light' ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white' : 'text-slate-400'
+                aria-label="Mode Terang"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
+                  theme === 'light'
+                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
                 <Sun className="w-3 h-3 text-amber-500" />
-                <span>Light</span>
+                <span>Terang</span>
               </button>
               <button
+                id="mobile-theme-dark-btn"
                 onClick={() => setTheme('dark')}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold cursor-pointer transition ${
-                  theme === 'dark' ? 'bg-slate-700 text-white' : 'text-slate-400'
+                aria-label="Mode Gelap"
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
+                  theme === 'dark'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                 }`}
               >
-                <Moon className="w-3 h-3" />
-                <span>Dark</span>
+                <Moon className="w-3 h-3 text-indigo-300" />
+                <span>Gelap</span>
               </button>
             </div>
           </div>

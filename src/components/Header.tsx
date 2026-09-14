@@ -127,13 +127,19 @@ export const Header: React.FC = () => {
 
           {/* Right Controls: Notifications & User Profile */}
           <div className="flex items-center gap-2.5">
-            {/* Theme Toggle */}
+            {/* Theme Toggle Button */}
             <button
+              id="header-theme-toggle"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+              className="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors relative"
+              aria-label={theme === 'light' ? 'Beralih ke Mode Gelap (Dark Mode)' : 'Beralih ke Mode Terang (Light Mode)'}
               title={theme === 'light' ? 'Beralih ke Dark Mode' : 'Beralih ke Light Mode'}
             >
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
+              {theme === 'light' ? (
+                <Moon className="w-4 h-4 text-slate-600 hover:text-slate-900 transition-transform hover:-rotate-12" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400 hover:text-amber-300 transition-transform hover:rotate-45" />
+              )}
             </button>
 
             {/* Notifications */}

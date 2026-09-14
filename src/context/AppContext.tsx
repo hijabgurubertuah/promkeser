@@ -135,7 +135,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
   const [currentProfile, setCurrentProfile] = useState<UserProfile>(initialProfiles[0]);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('sipag_theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [isLiveSyncing, setIsLiveSyncing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -206,12 +212,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('sipag_auditlogs', JSON.stringify(auditLogs));
   }, [auditLogs]);
 
-  // Handle Dark Theme Class on <html> or body
+  // Handle Dark Theme Class on <html> and body, and persist
   useEffect(() => {
+    localStorage.setItem('sipag_theme', theme);
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
     }
   }, [theme]);
 
