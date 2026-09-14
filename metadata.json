@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Informasi Paguyuban Promkeser",
+  "description": "Sistem Informasi Tata Kelola Keuangan, Iuran, RAB, dan Transparansi Paguyuban Promkeser Kabupaten Malang",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
