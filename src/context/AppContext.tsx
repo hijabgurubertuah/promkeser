@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   UserProfile,
   Member,
@@ -85,6 +85,7 @@ interface AppContextType {
   approveVerification: (id: string) => void;
   rejectVerification: (id: string, reason?: string) => void;
   addTransaction: (tx: Omit<CashTransaction, 'id' | 'noRef' | 'statusAudit' | 'dibuatOleh'>) => void;
+  deleteTransaction: (id: string) => void;
   addMember: (member: Omit<Member, 'id' | 'noAnggota'>) => void;
   updateMemberStatus: (id: string, newStatus: MemberStatus, keterangan?: string) => void;
   addActivity: (activity: Omit<ActivityRAB, 'id' | 'efisiensi'>) => void;
@@ -260,16 +261,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuditLogs((prev) => [newLog, ...prev]);
   };
 
-  // Financial Computations according to PRD Baseline (Rp 2.655.440)
+  // Financial Computations dynamically based on PRD baseline + user additions
   // Base terekonsiliasi 2026:
-  // Total Pemasukan 2026: Rp 8.450.000 (Reguler Rp 7.730.000 + Pelunasan 2025 Rp 720.000)
-  // Total Pengeluaran 2026: Rp 5.794.560
-  // Saldo = Rp 8.450.000 - Rp 5.794.560 = Rp 2.655.440! Exactly matches!
-  const totalPemasukan2026 = 8450000;
-  const totalPengeluaran2026 = 5794560;
-  const pemasukanReguler2026 = 7730000;
+  // Base Pemasukan 2026: Rp 8.450.000 (Reguler Rp 7.730.000 + Pelunasan 2025 Rp 720.000)
+  // Base Pengeluaran 2026: Rp 5.794.560
+  // Saldo Awal = Rp 8.450.000 - Rp 5.794.560 = Rp 2.655.440
+  const baselineInitialIds = useMemo(() => new Set(initialTransactions.map((t) => t.id)), []);
+  const newTransactions = useMemo(
+    () => transactions.filter((t) => !baselineInitialIds.has(t.id)),
+    [transactions, baselineInitialIds]
+  );
+
+  const additionalPemasukan = useMemo(
+    () =>
+      newTransactions
+        .filter((t) => t.jenis === 'pemasukan')
+        .reduce((acc, curr) => acc + curr.nominal, 0),
+    [newTransactions]
+  );
+
+  const additionalPengeluaran = useMemo(
+    () =>
+      newTransactions
+        .filter((t) => t.jenis === 'pengeluaran')
+        .reduce((acc, curr) => acc + curr.nominal, 0),
+    [newTransactions]
+  );
+
+  const totalPemasukan2026 = 8450000 + additionalPemasukan;
+  const totalPengeluaran2026 = 5794560 + additionalPengeluaran;
+  const pemasukanReguler2026 = 7730000 + additionalPemasukan;
   const pelunasan2025 = 720000;
-  const totalSaldo = totalPemasukan2026 - totalPengeluaran2026; // 2.655.440
+  const totalSaldo = totalPemasukan2026 - totalPengeluaran2026;
 
   // Compliance metrics:
   // 51 members total
@@ -374,6 +397,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     showToast(`Transaksi ${newTx.noRef} berhasil dicatat ke Buku Kas Utama!`);
     setIsAddTxModalOpen(false);
+  };
+
+  const deleteTransaction = (id: string) => {
+    const tx = transactions.find((t) => t.id === id);
+    if (!tx) return;
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+    addAuditLog(
+      'Hapus Transaksi Kas',
+      tx.noRef,
+      `Menghapus mutasi kas: ${tx.uraian} senilai Rp ${tx.nominal.toLocaleString('id-ID')}`
+    );
+    showToast(`Transaksi ${tx.noRef} berhasil dihapus dari Buku Kas.`);
   };
 
   const addMember = (memberData: Omit<Member, 'id' | 'noAnggota'>) => {
@@ -567,6 +602,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         approveVerification,
         rejectVerification,
         addTransaction,
+        deleteTransaction,
         addMember,
         updateMemberStatus,
         addActivity,

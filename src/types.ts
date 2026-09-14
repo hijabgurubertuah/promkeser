@@ -73,6 +73,7 @@ export interface CashTransaction {
   buktiNama?: string;
   kegiatanId?: string;
   dibuatOleh: string;
+  saldoSetelah?: number;
 }
 
 export type ActivityStatus = 'direncanakan' | 'berjalan' | 'selesai';

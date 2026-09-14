@@ -55,7 +55,7 @@ const ToastNotification: React.FC = () => {
 export default function App() {
   return (
     <AppProvider>
-      <div className="min-h-screen flex flex-col bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased font-sans transition-colors selection:bg-orange-500 selection:text-white">
+      <div className="min-h-screen w-full flex flex-col bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased font-sans transition-colors selection:bg-orange-500 selection:text-white overflow-x-hidden">
         <Header />
         <MobileSidebar />
         <MainContent />

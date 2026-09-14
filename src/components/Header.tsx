@@ -4,8 +4,6 @@ import {
   Bell,
   Calendar,
   ChevronDown,
-  Menu,
-  X,
   ShieldCheck,
   Building2,
   Users,
@@ -34,8 +32,6 @@ export const Header: React.FC = () => {
     setSearchQuery,
     verificationRequests,
     openReceiptModal,
-    isMobileSidebarOpen,
-    toggleMobileSidebar,
   } = useApp();
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -48,7 +44,7 @@ export const Header: React.FC = () => {
     { id: 'tentang', label: 'Tentang Paguyuban', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'anggota', label: 'Data Anggota', icon: <Users className="w-4 h-4" /> },
     { id: 'iuran', label: 'Iuran Anggota', icon: <CreditCard className="w-4 h-4" />, badge: pendingCount },
-    { id: 'keuangan', label: 'Keuangan / Kas', icon: <Wallet className="w-4 h-4" /> },
+    { id: 'keuangan', label: 'Buku Kas & Mutasi', icon: <Wallet className="w-4 h-4" /> },
     { id: 'kegiatan', label: 'Kegiatan & RAB', icon: <Target className="w-4 h-4" /> },
     { id: 'dokumen', label: 'Dokumen & Transparansi', icon: <FileText className="w-4 h-4" /> },
     { id: 'pusaka', label: 'Pusaka Paguyuban', icon: <Landmark className="w-4 h-4" /> },
@@ -56,18 +52,18 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+    <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors w-full">
       {/* Top Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-18 gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-18 gap-2 sm:gap-4">
           {/* Brand Logo */}
           <div
-            className="flex items-center gap-3 cursor-pointer shrink-0"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0"
             onClick={() => setActiveTab('beranda')}
           >
             {/* 5-Pillar Stylized Emblem */}
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 via-orange-500 to-amber-500 p-0.5 shadow-md flex items-center justify-center">
-              <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[10px] flex items-center justify-center p-1.5">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 via-orange-500 to-amber-500 p-0.5 shadow-md flex items-center justify-center shrink-0">
+              <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[8px] sm:rounded-[10px] flex items-center justify-center p-1 sm:p-1.5">
                 <svg viewBox="0 0 24 24" className="w-full h-full fill-none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="12" cy="5" r="3" className="fill-red-600" />
                   <circle cx="18.5" cy="10" r="3" className="fill-orange-500" />
@@ -79,22 +75,23 @@ export const Header: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 dark:text-white truncate">
                   PROMKESER
                 </span>
-                <span className="bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-orange-200 dark:border-orange-800">
+                <span className="bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded border border-orange-200 dark:border-orange-800 shrink-0">
                   SIPAG
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-none mt-0.5">
-                Kabupaten Malang • Tenaga Promosi Kesehatan
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5 truncate max-w-[135px] xs:max-w-[200px] sm:max-w-none">
+                <span className="sm:hidden">Kab. Malang • Promkes</span>
+                <span className="hidden sm:inline">Kabupaten Malang • Tenaga Promosi Kesehatan</span>
               </p>
             </div>
           </div>
 
-          {/* Center: Search & T.A. Badge */}
+          {/* Center: Search & T.A. Badge (Desktop) */}
           <div className="hidden md:flex items-center gap-3 flex-1 max-w-xl">
             {/* T.A. Badge */}
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
@@ -125,13 +122,13 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Controls: Notifications & User Profile */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Controls: Theme, Notifications & User Profile */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Theme Toggle Button */}
             <button
               id="header-theme-toggle"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              className="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors relative"
+              className="p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors relative"
               aria-label={theme === 'light' ? 'Beralih ke Mode Gelap (Dark Mode)' : 'Beralih ke Mode Terang (Light Mode)'}
               title={theme === 'light' ? 'Beralih ke Dark Mode' : 'Beralih ke Light Mode'}
             >
@@ -146,12 +143,12 @@ export const Header: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+                className="relative p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
                 title="Pemberitahuan Sistem"
               >
                 <Bell className="w-4 h-4" />
                 {pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 animate-pulse">
+                  <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 bg-red-600 text-white text-[9px] sm:text-[10px] font-extrabold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 animate-pulse">
                     {pendingCount}
                   </span>
                 )}
@@ -159,7 +156,7 @@ export const Header: React.FC = () => {
 
               {/* Notification Popup Dropdown */}
               {isNotifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 z-50 animate-fade-in">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 z-50 animate-fade-in">
                   <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-900 dark:text-white">Pemberitahuan Sistem</span>
                     <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-semibold">
@@ -231,12 +228,14 @@ export const Header: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                className="flex items-center gap-2 p-1.5 pl-2 pr-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 sm:pl-2 sm:pr-2.5 rounded-lg sm:rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer bg-white dark:bg-slate-850 shadow-2xs"
+                title={`Profil: ${currentProfile.name} (${currentProfile.role})`}
+                aria-label="Menu Profil dan Hak Akses"
               >
                 <img
                   src={currentProfile.avatarUrl}
                   alt={currentProfile.name}
-                  className="w-7 h-7 rounded-full object-cover ring-1 ring-orange-500"
+                  className="w-7 h-7 sm:w-7 sm:h-7 rounded-full object-cover ring-2 ring-orange-500 shrink-0"
                 />
                 <div className="text-left hidden sm:block">
                   <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
@@ -246,12 +245,12 @@ export const Header: React.FC = () => {
                     {currentProfile.title}
                   </div>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               </button>
 
               {/* Role Switcher Menu */}
               {isProfileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 z-50 animate-fade-in">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-2 z-50 animate-fade-in">
                   <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
                     <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
                       Simulasi Pengguna & RBAC
@@ -281,7 +280,7 @@ export const Header: React.FC = () => {
                             <img
                               src={profile.avatarUrl}
                               alt={profile.name}
-                              className="w-7 h-7 rounded-full object-cover"
+                              className="w-7 h-7 rounded-full object-cover shrink-0"
                             />
                             <div>
                               <div className="font-semibold">{profile.name}</div>
@@ -304,15 +303,6 @@ export const Header: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* Mobile Hamburger Toggle */}
-            <button
-              onClick={toggleMobileSidebar}
-              aria-label="Menu Navigasi"
-              className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition"
-            >
-              {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
       </div>
