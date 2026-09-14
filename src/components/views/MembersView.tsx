@@ -12,17 +12,29 @@ import {
   ShieldCheck,
   FileDown,
   Info,
+  UploadCloud,
+  FileSpreadsheet,
+  Download,
+  Copy,
+  ChevronDown,
+  Printer,
+  FileText,
+  Check,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Member, MemberStatus } from '../../types';
+import { MemberImportModal } from '../modals/MemberImportModal';
 
 export const MembersView: React.FC = () => {
-  const { members, openMemberDetailModal, currentProfile, addMember } = useApp();
+  const { members, openMemberDetailModal, currentProfile, addMember, showToast } = useApp();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [wilayahFilter, setWilayahFilter] = useState<string>('all');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isQuickDragOver, setIsQuickDragOver] = useState(false);
 
   // New member form states
   const [newNama, setNewNama] = useState('');
@@ -33,7 +45,7 @@ export const MembersView: React.FC = () => {
   const [newKontak, setNewKontak] = useState('');
   const [newEmail, setNewEmail] = useState('');
 
-  const canAdd = currentProfile.role === 'admin' || currentProfile.role === 'bendahara';
+  const canManage = currentProfile.role === 'admin' || currentProfile.role === 'bendahara';
 
   const filteredMembers = members.filter((m) => {
     const matchSearch =
@@ -51,6 +63,93 @@ export const MembersView: React.FC = () => {
   const countBaru = members.filter((m) => m.status === 'baru').length;
   const countPindah = members.filter((m) => m.status === 'pindah_satker').length;
   const countNonAktif = members.filter((m) => m.status === 'tidak_aktif').length;
+
+  // Export Data to CSV (Excel compatible with UTF-8 BOM)
+  const handleExportCSV = () => {
+    const headers = [
+      'No',
+      'Nomor Anggota',
+      'Nama Lengkap',
+      'Gelar Akademik',
+      'Puskesmas Induk',
+      'Wilayah Koordinasi',
+      'Jabatan Satker',
+      'Status Keanggotaan',
+      'Kontak WhatsApp',
+      'Email',
+      'Tahun Bergabung',
+      'Keterangan Status',
+    ];
+
+    const rows = filteredMembers.map((m, idx) => [
+      idx + 1,
+      `"${m.noAnggota}"`,
+      `"${m.nama}"`,
+      `"${m.gelar}"`,
+      `"${m.puskesmas}"`,
+      `"${m.wilayah}"`,
+      `"${m.jabatanSatker}"`,
+      `"${m.status}"`,
+      `"${m.kontak}"`,
+      `"${m.email}"`,
+      m.tahunBergabung,
+      `"${m.keteranganStatus || ''}"`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('download', `Data_Identitas_Anggota_SIPAG_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setIsExportMenuOpen(false);
+    showToast(`Berhasil mengekspor ${filteredMembers.length} data anggota ke file CSV (Excel)!`);
+  };
+
+  // Export Data to JSON
+  const handleExportJSON = () => {
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filteredMembers, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadAnchor.setAttribute('download', `Data_Identitas_Anggota_SIPAG_${dateStr}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    setIsExportMenuOpen(false);
+    showToast(`Berhasil mengekspor ${filteredMembers.length} data anggota ke format JSON!`);
+  };
+
+  // Copy Identity List to Clipboard (WhatsApp friendly)
+  const handleCopyWhatsAppText = () => {
+    const today = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    let text = `📋 *DATA IDENTITAS ANGGOTA PAGUYUBAN TENAGA PROMOSI KESEHATAN (SIPAG)*\n`;
+    text += `Kabupaten Malang • Per: ${today}\n`;
+    text += `Total Anggota: ${filteredMembers.length} Personel\n\n`;
+
+    filteredMembers.forEach((m, idx) => {
+      text += `${idx + 1}. *${m.nama}, ${m.gelar}* (${m.noAnggota})\n`;
+      text += `   🏥 Satker: ${m.puskesmas} (${m.wilayah})\n`;
+      text += `   💼 Jabatan: ${m.jabatanSatker}\n`;
+      text += `   📱 WA: ${m.kontak}\n`;
+      text += `   🟢 Status: ${m.status.toUpperCase()}\n\n`;
+    });
+
+    navigator.clipboard.writeText(text).then(() => {
+      setIsExportMenuOpen(false);
+      showToast('Daftar nama dan identitas anggota berhasil disalin ke clipboard!');
+    });
+  };
 
   const handleCreateMember = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +181,7 @@ export const MembersView: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Page Title Banner */}
-      <div className="bg-white dark:bg-slate-850 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-850 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-1.5 h-6 bg-red-600 rounded-full inline-block"></span>
@@ -98,16 +197,154 @@ export const MembersView: React.FC = () => {
           </p>
         </div>
 
-        {canAdd && (
-          <button
-            onClick={() => setIsAddFormOpen(!isAddFormOpen)}
-            className="w-full sm:w-auto justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Tambah Anggota Baru</span>
-          </button>
-        )}
+        {/* Action Buttons: Import, Export, Add */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Export Dropdown Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs border border-slate-200 dark:border-slate-700 transition"
+              title="Ekspor Data Identitas Anggota"
+            >
+              <Download className="w-3.5 h-3.5 text-orange-600" />
+              <span>Ekspor Data</span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-40 animate-fade-in text-xs">
+                <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Pilihan Format Ekspor
+                </div>
+
+                <button
+                  onClick={handleExportCSV}
+                  className="w-full px-3 py-2.5 text-left flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white">Unduh CSV / Excel (.csv)</div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Tabel lengkap siap olah di Microsoft Excel / Google Sheets
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={handleExportJSON}
+                  className="w-full px-3 py-2.5 text-left flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
+                >
+                  <FileText className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white">Unduh Database JSON (.json)</div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Format terstruktur untuk backup atau integrasi sistem
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={handleCopyWhatsAppText}
+                  className="w-full px-3 py-2.5 text-left flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
+                >
+                  <Copy className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white">Salin Format Teks WA</div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Daftar rapi dengan emoji siap tempel ke grup WhatsApp
+                    </p>
+                  </div>
+                </button>
+
+                <div className="my-1 border-t border-slate-100 dark:border-slate-700" />
+
+                <button
+                  onClick={() => {
+                    setIsExportMenuOpen(false);
+                    window.print();
+                  }}
+                  className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-slate-700 dark:text-slate-300 font-semibold"
+                >
+                  <Printer className="w-4 h-4 text-slate-400" />
+                  <span>Cetak Dokumen Fisik / PDF</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Import Drag & Drop Button for Admin & Bendahara */}
+          {canManage && (
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+              title="Unggah dan impor file CSV / Excel data anggota"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Impor (Drag & Drop)</span>
+            </button>
+          )}
+
+          {/* Add Manual Member Button */}
+          {canManage && (
+            <button
+              onClick={() => setIsAddFormOpen(!isAddFormOpen)}
+              className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Tambah Manual</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Admin Drag & Drop Quick Zone */}
+      {canManage && (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsQuickDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            setIsQuickDragOver(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsQuickDragOver(false);
+            setIsImportModalOpen(true);
+          }}
+          onClick={() => setIsImportModalOpen(true)}
+          className={`p-4 rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-2xs ${
+            isQuickDragOver
+              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 ring-4 ring-orange-500/20 scale-[1.005]'
+              : 'border-slate-300 dark:border-slate-700 bg-gradient-to-r from-red-50/50 via-orange-50/40 to-amber-50/40 dark:from-slate-850 dark:to-slate-800/80 hover:border-orange-400 dark:hover:border-orange-500'
+          }`}
+        >
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <UploadCloud className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <div className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2 justify-center sm:justify-start">
+                <span>Area Seret-dan-Lepas (Drag & Drop) Data Anggota</span>
+                <span className="bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
+                  Khusus Admin
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Tarik file CSV / Excel / JSON ke sini untuk mengunggah dan memvalidasi daftar nama anggota fungsional secara instan
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="text-[11px] font-bold text-orange-700 dark:text-orange-300 bg-white dark:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-orange-200 dark:border-orange-800 shadow-2xs hover:bg-orange-50 dark:hover:bg-slate-700 transition shrink-0 cursor-pointer"
+          >
+            Buka Panel Impor &rarr;
+          </button>
+        </div>
+      )}
 
       {/* Add Member Form (Accordion / Collapsible) */}
       {isAddFormOpen && (
@@ -397,6 +634,12 @@ export const MembersView: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Drag & Drop Member Import Modal */}
+      <MemberImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   );
 };

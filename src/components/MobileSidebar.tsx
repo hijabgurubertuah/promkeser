@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Search,
   Calendar,
-  ChevronRight,
   UserCheck,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../context/AppContext';
@@ -98,8 +97,8 @@ export const MobileSidebar: React.FC = () => {
     <>
       {/* 
         TRIGGER BUTTON ON MOBILE:
-        Fixed at middle-left of the phone screen (sisi kiri tengah layar hp).
-        Dimensions: tinggi 120px x lebar 30px yang rounded (h-[120px] w-[30px]).
+        Fixed at middle-left of the phone screen.
+        Cukup hamburger di tengah dan garis tegak atas dan bawah. Yang lain hapus.
       */}
       {!isMobileSidebarOpen && (
         <button
@@ -107,24 +106,16 @@ export const MobileSidebar: React.FC = () => {
           onClick={toggleMobileSidebar}
           aria-label="Buka Menu Navigasi SIPAG"
           title="Buka Menu Navigasi"
-          style={{ height: '120px', width: '30px' }}
-          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 md:hidden bg-gradient-to-b from-red-600 via-orange-500 to-amber-500 text-white rounded-r-2xl shadow-xl shadow-orange-600/30 flex flex-col items-center justify-between py-2 border-y border-r border-orange-300/50 hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer select-none group"
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 md:hidden w-[22px] h-[84px] bg-gradient-to-b from-red-600 via-orange-500 to-amber-500 text-white rounded-r-xl shadow-lg shadow-orange-600/30 flex flex-col items-center justify-between py-2.5 border-y border-r border-orange-300/40 hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer select-none group"
         >
-          {/* Top Indicator / Icon */}
-          <div className="flex flex-col items-center">
-            <Menu className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-            {pendingCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-white animate-ping mt-1"></span>
-            )}
-          </div>
+          {/* Garis tegak atas */}
+          <span className="w-0.5 flex-1 bg-white/75 rounded-full" />
 
-          {/* Vertical Text Label */}
-          <span className="text-[9px] font-black tracking-widest uppercase [writing-mode:vertical-rl] rotate-180 select-none text-white/95">
-            MENU
-          </span>
+          {/* Hamburger di tengah */}
+          <Menu className="w-3.5 h-3.5 text-white my-1 shrink-0 group-hover:scale-110 transition-transform" />
 
-          {/* Bottom Chevron Right Arrow */}
-          <ChevronRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform" />
+          {/* Garis tegak bawah */}
+          <span className="w-0.5 flex-1 bg-white/75 rounded-full" />
         </button>
       )}
 

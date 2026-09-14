@@ -87,6 +87,7 @@ interface AppContextType {
   addTransaction: (tx: Omit<CashTransaction, 'id' | 'noRef' | 'statusAudit' | 'dibuatOleh'>) => void;
   deleteTransaction: (id: string) => void;
   addMember: (member: Omit<Member, 'id' | 'noAnggota'>) => void;
+  addMembersBatch: (batch: Omit<Member, 'id' | 'noAnggota'>[]) => void;
   updateMemberStatus: (id: string, newStatus: MemberStatus, keterangan?: string) => void;
   addActivity: (activity: Omit<ActivityRAB, 'id' | 'efisiensi'>) => void;
   addDocument: (doc: Omit<OrgDocument, 'id'>) => void;
@@ -423,6 +424,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Anggota baru ${newMember.nama} (${newNo}) berhasil ditambahkan!`);
   };
 
+  const addMembersBatch = (batchData: Omit<Member, 'id' | 'noAnggota'>[]) => {
+    if (batchData.length === 0) return;
+    let nextNum = members.length + 1;
+    const timestamp = Date.now();
+    const newItems: Member[] = batchData.map((item, idx) => ({
+      ...item,
+      id: `MBR-${timestamp}-${idx}`,
+      noAnggota: `PKM-MLG-${String(nextNum++).padStart(3, '0')}`,
+    }));
+    setMembers((prev) => [...prev, ...newItems]);
+    addAuditLog(
+      'Impor Massal Anggota (Drag & Drop)',
+      `${newItems.length} Anggota`,
+      `Berhasil mengimpor ${newItems.length} anggota baru ke Master Data SIPAG`
+    );
+    showToast(`Berhasil menambahkan ${newItems.length} anggota baru secara massal!`);
+  };
+
   const updateMemberStatus = (id: string, newStatus: MemberStatus, keterangan?: string) => {
     setMembers((prev) =>
       prev.map((m) =>
@@ -604,6 +623,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addTransaction,
         deleteTransaction,
         addMember,
+        addMembersBatch,
         updateMemberStatus,
         addActivity,
         addDocument,
