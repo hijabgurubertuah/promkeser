@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   UserProfile,
+  MasterPengguna,
   Member,
   CashTransaction,
   VerificationRequest,
@@ -9,10 +10,12 @@ import {
   HeritageItem,
   AuditLogItem,
   MemberStatus,
+  MasterPuskesmas,
 } from '../types';
 import {
   initialProfiles,
   initialMembers,
+  initialPuskesmasList,
   initialTransactions,
   initialVerificationRequests,
   initialActivities,
@@ -25,6 +28,7 @@ export type NavigationTab =
   | 'beranda'
   | 'tentang'
   | 'anggota'
+  | 'pengguna'
   | 'iuran'
   | 'keuangan'
   | 'kegiatan'
@@ -44,15 +48,31 @@ interface ReceiptModalInfo {
 }
 
 interface AppContextType {
-  // Navigation & User
+  // Authentication & Session
+  isAuthenticated: boolean;
+  loginWithGoogle: (email: string) => { success: boolean; message?: string };
+  logout: () => void;
+  currentProfile: MasterPengguna;
+  setCurrentProfile: (profile: MasterPengguna) => void;
+  masterUsers: MasterPengguna[];
+  addMasterUser: (user: MasterPengguna) => void;
+  updateMasterUser: (id: string, user: Partial<MasterPengguna>) => void;
+  deleteMasterUser: (id: string) => void;
+
+  // RBAC Helpers
+  isMasterAdmin: boolean;
+  isKetua: boolean;
+  isBendahara: boolean;
+  isPengurus: boolean;
+  isAnggotaOnly: boolean;
+
+  // Navigation & General
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
   isMobileSidebarOpen: boolean;
   setIsMobileSidebarOpen: (open: boolean) => void;
   toggleMobileSidebar: () => void;
-  currentProfile: UserProfile;
-  setCurrentProfile: (profile: UserProfile) => void;
-  profiles: UserProfile[];
+  profiles: MasterPengguna[];
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   searchQuery: string;
@@ -65,6 +85,7 @@ interface AppContextType {
 
   // Master Data
   members: Member[];
+  puskesmasList: MasterPuskesmas[];
   transactions: CashTransaction[];
   verificationRequests: VerificationRequest[];
   activities: ActivityRAB[];
@@ -91,6 +112,7 @@ interface AppContextType {
   deleteTransaction: (id: string) => void;
   addMember: (member: Omit<Member, 'id' | 'noAnggota'>) => void;
   addMembersBatch: (batch: Omit<Member, 'id' | 'noAnggota'>[]) => void;
+  importMembers: (newMembers: Member[]) => void;
   updateMemberStatus: (id: string, newStatus: MemberStatus, keterangan?: string) => void;
   addActivity: (activity: Omit<ActivityRAB, 'id' | 'efisiensi'>) => void;
   addDocument: (doc: Omit<OrgDocument, 'id'>) => void;
@@ -128,6 +150,14 @@ interface AppContextType {
   openMemberDetailModal: (member: Member) => void;
   closeMemberDetailModal: () => void;
 
+  isImportModalOpen: boolean;
+  openImportModal: () => void;
+  closeImportModal: () => void;
+
+  isExportModalOpen: boolean;
+  openExportModal: () => void;
+  closeExportModal: () => void;
+
   // Notification Toast
   toastMessage: string | null;
   showToast: (msg: string) => void;
@@ -136,10 +166,29 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const saved = localStorage.getItem('sipag_is_authenticated');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const [masterUsers, setMasterUsers] = useState<MasterPengguna[]>(() => {
+    const saved = localStorage.getItem('sipag_master_users');
+    return saved ? JSON.parse(saved) : initialProfiles;
+  });
+
+  const [currentProfile, setCurrentProfile] = useState<MasterPengguna>(() => {
+    const savedEmail = localStorage.getItem('sipag_current_user_email');
+    if (savedEmail) {
+      const found = masterUsers.find((u) => u.email.toLowerCase() === savedEmail.toLowerCase());
+      if (found) return found;
+    }
+    return masterUsers[0] || initialProfiles[0];
+  });
+
   const [activeTab, setActiveTab] = useState<NavigationTab>('beranda');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const toggleMobileSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
-  const [currentProfile, setCurrentProfile] = useState<UserProfile>(initialProfiles[0]);
+
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('sipag_theme');
     if (saved === 'dark' || saved === 'light') return saved;
@@ -147,6 +196,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? 'dark'
       : 'light';
   });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isLiveSyncing, setIsLiveSyncing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -169,6 +219,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('sipag_members');
     return saved ? JSON.parse(saved) : initialMembers;
   });
+
+  const [puskesmasList] = useState<MasterPuskesmas[]>(initialPuskesmasList);
 
   const [transactions, setTransactions] = useState<CashTransaction[]>(() => {
     const saved = localStorage.getItem('sipag_transactions');
@@ -204,8 +256,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isSubmitDuesModalOpen, setIsSubmitDuesModalOpen] = useState(false);
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Synchronize localStorage
+  useEffect(() => {
+    localStorage.setItem('sipag_master_users', JSON.stringify(masterUsers));
+  }, [masterUsers]);
+
+  useEffect(() => {
+    localStorage.setItem('sipag_is_authenticated', String(isAuthenticated));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (currentProfile?.email) {
+      localStorage.setItem('sipag_current_user_email', currentProfile.email);
+    }
+  }, [currentProfile]);
+
   useEffect(() => {
     localStorage.setItem('sipag_members', JSON.stringify(members));
   }, [members]);
@@ -249,6 +317,119 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   };
 
+  const addAuditLog = (aksi: string, entitas: string, detail: string) => {
+    const newLog: AuditLogItem = {
+      id: `log-${Date.now()}`,
+      waktu: new Date().toLocaleString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }) + ' WIB',
+      pengguna: currentProfile.nama,
+      role:
+        currentProfile.role === 'admin_master'
+          ? 'Admin Master'
+          : currentProfile.role === 'ketua'
+          ? 'Ketua'
+          : currentProfile.role === 'bendahara'
+          ? 'Bendahara'
+          : currentProfile.role === 'pengurus'
+          ? 'Pengurus'
+          : 'Anggota',
+      aksi,
+      entitas,
+      detail,
+    };
+    setAuditLogs((prev) => [newLog, ...prev]);
+  };
+
+  // Google Authentication Engine
+  const loginWithGoogle = (email: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const user = masterUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (!user) {
+      return {
+        success: false,
+        message: `Email Google "${cleanEmail}" belum terdaftar dalam tabel MASTER_PENGGUNA. Hubungi Administrator Master (Yustin).`,
+      };
+    }
+
+    if (user.statusAkun === 'nonaktif') {
+      return {
+        success: false,
+        message: `Akun Google "${cleanEmail}" berstatus NONAKTIF. Hubungi Administrator Master untuk mengaktifkan kembali.`,
+      };
+    }
+
+    if (user.statusAkun === 'pending') {
+      return {
+        success: false,
+        message: `Akun Google "${cleanEmail}" masih menunggu persetujuan (PENDING) oleh Administrator Master.`,
+      };
+    }
+
+    // Update login timestamp
+    const nowStamp = new Date().toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }) + ' WIB';
+
+    const updatedUser = { ...user, terakhirLogin: nowStamp };
+    setMasterUsers((prev) => prev.map((u) => (u.id === user.id ? updatedUser : u)));
+    setCurrentProfile(updatedUser);
+    setIsAuthenticated(true);
+    showToast(`Selamat datang kembali, ${user.nama}!`);
+    addAuditLog('Login Google', `${user.email} (${user.role})`, `Login berhasil pada ${nowStamp}`);
+    return { success: true };
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    showToast('Anda telah keluar dari sesi aplikasi SIPAG.');
+  };
+
+  const addMasterUser = (user: MasterPengguna) => {
+    setMasterUsers((prev) => [user, ...prev]);
+    showToast(`Pengguna baru ${user.nama} (${user.email}) berhasil ditambahkan ke MASTER_PENGGUNA.`);
+    addAuditLog('Tambah Pengguna', user.email, `Role: ${user.role}, Status: ${user.statusAkun}`);
+  };
+
+  const updateMasterUser = (id: string, updated: Partial<MasterPengguna>) => {
+    setMasterUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === id) {
+          const res = { ...u, ...updated };
+          if (currentProfile.id === id) {
+            setCurrentProfile(res);
+          }
+          return res;
+        }
+        return u;
+      })
+    );
+    showToast('Data pengguna & hak akses berhasil diperbarui.');
+    addAuditLog('Perbarui Pengguna', id, 'Perubahan data role / status akun pengguna');
+  };
+
+  const deleteMasterUser = (id: string) => {
+    setMasterUsers((prev) => prev.filter((u) => u.id !== id));
+    showToast('Pengguna berhasil dihapus dari MASTER_PENGGUNA.');
+    addAuditLog('Hapus Pengguna', id, 'Menghapus akses akun Google dari sistem');
+  };
+
+  // RBAC Permission Computations
+  const isMasterAdmin = currentProfile.role === 'admin_master';
+  const isKetua = currentProfile.role === 'ketua';
+  const isBendahara = currentProfile.role === 'bendahara' || currentProfile.role === 'admin_master';
+  const isPengurus = ['admin_master', 'ketua', 'bendahara', 'pengurus'].includes(currentProfile.role);
+  const isAnggotaOnly = currentProfile.role === 'anggota';
+
   const triggerLiveSync = async () => {
     setIsLiveSyncing(true);
 
@@ -263,7 +444,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (googleSheetUrl && googleSheetUrl.trim().startsWith('http')) {
       showToast('Menghubungi endpoint Google Sheets & merekonsiliasi mutasi kas...');
 
-      // If user provided a Google Apps Script Web App URL or Webhook, send live payload
       if (googleSheetUrl.includes('script.google.com') || googleSheetUrl.includes('webhook')) {
         try {
           await fetch(googleSheetUrl, {
@@ -302,30 +482,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const addAuditLog = (aksi: string, entitas: string, detail: string) => {
-    const newLog: AuditLogItem = {
-      id: `log-${Date.now()}`,
-      waktu: new Date().toLocaleString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }) + ' WIB',
-      pengguna: currentProfile.name,
-      role: currentProfile.role === 'bendahara' ? 'Bendahara' : currentProfile.role === 'admin' ? 'Administrator' : currentProfile.role === 'pengurus' ? 'Pengurus' : 'Anggota',
-      aksi,
-      entitas,
-      detail,
-    };
-    setAuditLogs((prev) => [newLog, ...prev]);
-  };
-
   // Financial Computations dynamically based on PRD baseline + user additions
-  // Base terekonsiliasi 2026:
-  // Base Pemasukan 2026: Rp 8.450.000 (Reguler Rp 7.730.000 + Pelunasan 2025 Rp 720.000)
-  // Base Pengeluaran 2026: Rp 5.794.560
-  // Saldo Awal = Rp 8.450.000 - Rp 5.794.560 = Rp 2.655.440
   const baselineInitialIds = useMemo(() => new Set(initialTransactions.map((t) => t.id)), []);
   const newTransactions = useMemo(
     () => transactions.filter((t) => !baselineInitialIds.has(t.id)),
@@ -354,29 +511,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const pelunasan2025 = 720000;
   const totalSaldo = totalPemasukan2026 - totalPengeluaran2026;
 
-  // Compliance metrics:
-  // 51 members total
-  // 34 Lunas
-  // 3 Slip Menunggu Verifikasi
-  // 7 Tunggakan (>2 bln)
-  // 7 Pindah Satker / Tugas Belajar
-  const totalLunasCount = 34;
+  const totalLunasCount = members.filter((m) => m.status === 'aktif' && m.keteranganStatus.toLowerCase().includes('lunas')).length || 34;
   const totalPendingCount = verificationRequests.filter((v) => v.status === 'pending').length;
-  const totalTertunggakCount = 7;
-  const totalPindahSatkerCount = 7;
-  const complianceRate = 78.4;
+  const totalTertunggakCount = members.filter((m) => m.keteranganStatus.toLowerCase().includes('tunggakan')).length || 7;
+  const totalPindahSatkerCount = members.filter((m) => m.status === 'pindah_satker').length || 7;
+  const complianceRate = members.length > 0 ? Math.round((totalLunasCount / members.length) * 1000) / 10 : 78.4;
 
   // Operations
   const approveVerification = (id: string) => {
     const item = verificationRequests.find((v) => v.id === id);
     if (!item) return;
 
-    // Update status in verificationRequests
     setVerificationRequests((prev) =>
       prev.map((v) => (v.id === id ? { ...v, status: 'disetujui' } : v))
     );
 
-    // Create a corresponding transaction
     const newTx: CashTransaction = {
       id: `trx-${Date.now()}`,
       noRef: `TRX-2026-${String(transactions.length + 93).padStart(3, '0')}`,
@@ -393,12 +542,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       statusAudit: 'tervalidasi',
       buktiFile: item.fileBukti,
       buktiNama: item.fileBukti,
-      dibuatOleh: `${currentProfile.name} (${currentProfile.title})`,
+      dibuatOleh: `${currentProfile.nama} (${currentProfile.jabatan})`,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
 
-    // Update member status
     setMembers((prev) =>
       prev.map((m) =>
         m.id === item.memberId
@@ -444,7 +592,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `trx-${Date.now()}`,
       noRef: `TRX-2026-${String(transactions.length + 93).padStart(3, '0')}`,
       statusAudit: 'tervalidasi',
-      dibuatOleh: `${currentProfile.name} (${currentProfile.title})`,
+      dibuatOleh: `${currentProfile.nama} (${currentProfile.jabatan})`,
     };
 
     setTransactions((prev) => [newTx, ...prev]);
@@ -494,11 +642,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
     setMembers((prev) => [...prev, ...newItems]);
     addAuditLog(
-      'Impor Massal Anggota (Drag & Drop)',
+      'Impor Massal Anggota',
       `${newItems.length} Anggota`,
       `Berhasil mengimpor ${newItems.length} anggota baru ke Master Data SIPAG`
     );
     showToast(`Berhasil menambahkan ${newItems.length} anggota baru secara massal!`);
+  };
+
+  const importMembers = (newMembers: Member[]) => {
+    setMembers(newMembers);
+    addAuditLog(
+      'Sinkronisasi & Impor MASTER_ANGGOTA',
+      `${newMembers.length} Anggota`,
+      `Memperbarui seluruh database Master Anggota (${newMembers.length} record)`
+    );
+    showToast(`Database Master Anggota berhasil diperbarui (${newMembers.length} data anggota)!`);
   };
 
   const updateMemberStatus = (id: string, newStatus: MemberStatus, keterangan?: string) => {
@@ -603,6 +761,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       app: 'SIPAG Promkeser Kabupaten Malang',
       exportDate: new Date().toISOString(),
       saldoTerekonsiliasi: totalSaldo,
+      masterPengguna: masterUsers,
       members,
       transactions,
       verificationRequests,
@@ -640,17 +799,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openMemberDetailModal = (member: Member) => setSelectedMember(member);
   const closeMemberDetailModal = () => setSelectedMember(null);
 
+  const openImportModal = () => setIsImportModalOpen(true);
+  const closeImportModal = () => setIsImportModalOpen(false);
+
+  const openExportModal = () => setIsExportModalOpen(true);
+  const closeExportModal = () => setIsExportModalOpen(false);
+
   return (
     <AppContext.Provider
       value={{
+        isAuthenticated,
+        loginWithGoogle,
+        logout,
+        currentProfile,
+        setCurrentProfile,
+        masterUsers,
+        addMasterUser,
+        updateMasterUser,
+        deleteMasterUser,
+
+        isMasterAdmin,
+        isKetua,
+        isBendahara,
+        isPengurus,
+        isAnggotaOnly,
+
         activeTab,
         setActiveTab,
         isMobileSidebarOpen,
         setIsMobileSidebarOpen,
         toggleMobileSidebar,
-        currentProfile,
-        setCurrentProfile,
-        profiles: initialProfiles,
+        profiles: masterUsers,
         theme,
         setTheme,
         searchQuery,
@@ -662,6 +841,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         lastSyncTime,
 
         members,
+        puskesmasList,
         transactions,
         verificationRequests,
         activities,
@@ -686,6 +866,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteTransaction,
         addMember,
         addMembersBatch,
+        importMembers,
         updateMemberStatus,
         addActivity,
         addDocument,
@@ -713,6 +894,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedMember,
         openMemberDetailModal,
         closeMemberDetailModal,
+
+        isImportModalOpen,
+        openImportModal,
+        closeImportModal,
+
+        isExportModalOpen,
+        openExportModal,
+        closeExportModal,
 
         toastMessage,
         showToast,

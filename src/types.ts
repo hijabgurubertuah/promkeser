@@ -1,30 +1,60 @@
-export type UserRole = 'bendahara' | 'admin' | 'pengurus' | 'anggota';
+export type UserRole = 'admin_master' | 'ketua' | 'bendahara' | 'pengurus' | 'anggota';
 
-export interface UserProfile {
+export interface MasterPengguna {
   id: string;
-  name: string;
-  email: string;
+  email: string; // Google Account Email
+  idAnggota?: string; // Relasi ke MASTER_ANGGOTA jika user adalah anggota
+  nama: string;
   role: UserRole;
+  statusAkun: 'aktif' | 'nonaktif' | 'pending';
   title: string;
   puskesmas?: string;
   avatarUrl?: string;
+  terakhirLogin?: string;
+  hakAkses: string[];
 }
+
+export type UserProfile = MasterPengguna;
 
 export type MemberStatus = 'aktif' | 'baru' | 'tidak_aktif' | 'pindah_satker';
 
+export interface MemberHistoryLog {
+  tanggal: string;
+  aksi: string;
+  catatan: string;
+  oleh?: string;
+}
+
 export interface Member {
   id: string;
-  noAnggota: string;
+  noAnggota: string; // e.g. AGT-001 / PKM-MLG-001
   nama: string;
+  namaPanggilan?: string;
   gelar?: string;
   puskesmas: string;
   wilayah: 'Malang Utara' | 'Malang Selatan' | 'Malang Barat' | 'Malang Timur' | 'Sekretariat DKK';
   jabatanSatker: string;
   status: MemberStatus;
+  tanggalMulai?: string;
+  tanggalNonaktif?: string;
   tahunBergabung: number;
   kontak: string;
   email: string;
   keteranganStatus?: string;
+  histori?: MemberHistoryLog[];
+}
+
+export type MasterAnggota = Member;
+
+export interface MasterPuskesmas {
+  id: string;
+  kode: string;
+  nama: string;
+  wilayah: 'Malang Utara' | 'Malang Selatan' | 'Malang Barat' | 'Malang Timur' | 'Sekretariat DKK';
+  alamat: string;
+  kontak: string;
+  kepalaPuskesmas?: string;
+  jumlahPromkeser: number;
 }
 
 export type DuesStatus = 'lunas' | 'menunggu_verifikasi' | 'tertunggak';

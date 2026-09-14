@@ -23,16 +23,25 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Member, MemberStatus } from '../../types';
-import { MemberImportModal } from '../modals/MemberImportModal';
 
 export const MembersView: React.FC = () => {
-  const { members, openMemberDetailModal, currentProfile, addMember, showToast } = useApp();
+  const {
+    members,
+    openMemberDetailModal,
+    currentProfile,
+    addMember,
+    showToast,
+    openImportModal,
+    openExportModal,
+    isMasterAdmin,
+    isBendahara,
+    isPengurus,
+  } = useApp();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [wilayahFilter, setWilayahFilter] = useState<string>('all');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isQuickDragOver, setIsQuickDragOver] = useState(false);
 
@@ -45,7 +54,7 @@ export const MembersView: React.FC = () => {
   const [newKontak, setNewKontak] = useState('');
   const [newEmail, setNewEmail] = useState('');
 
-  const canManage = currentProfile.role === 'admin' || currentProfile.role === 'bendahara';
+  const canManage = isMasterAdmin || isBendahara || isPengurus;
 
   const filteredMembers = members.filter((m) => {
     const matchSearch =
@@ -212,46 +221,62 @@ export const MembersView: React.FC = () => {
             </button>
 
             {isExportMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-40 animate-fade-in text-xs">
-                <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="absolute right-0 mt-2 w-68 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-2 z-40 animate-fade-in text-xs">
+                <div className="px-3.5 py-1.5 border-b border-slate-100 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   Pilihan Format Ekspor
                 </div>
 
                 <button
+                  onClick={() => {
+                    setIsExportMenuOpen(false);
+                    openExportModal();
+                  }}
+                  className="w-full px-3.5 py-2.5 text-left flex items-start gap-2.5 bg-orange-50/70 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/60 transition cursor-pointer text-slate-900 dark:text-white border-b border-orange-100 dark:border-orange-900/30"
+                >
+                  <Download className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-bold text-orange-700 dark:text-orange-400">Modal Ekspor & Filter Lengkap</div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Pilih format, filter status, dan preview data real-time
+                    </p>
+                  </div>
+                </button>
+
+                <button
                   onClick={handleExportCSV}
-                  className="w-full px-3 py-2.5 text-left flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
+                  className="w-full px-3.5 py-2 text-left flex items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
                   <div>
                     <div className="font-bold text-slate-900 dark:text-white">Unduh CSV / Excel (.csv)</div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Tabel lengkap siap olah di Microsoft Excel / Google Sheets
+                      Tabel lengkap siap olah di Excel / Sheets
                     </p>
                   </div>
                 </button>
 
                 <button
                   onClick={handleExportJSON}
-                  className="w-full px-3 py-2.5 text-left flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
+                  className="w-full px-3.5 py-2 text-left flex items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
                 >
                   <FileText className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                   <div>
-                    <div className="font-bold text-slate-900 dark:text-white">Unduh Database JSON (.json)</div>
+                    <div className="font-bold text-slate-900 dark:text-white">Unduh Backup JSON (.json)</div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Format terstruktur untuk backup atau integrasi sistem
+                      Format terstruktur untuk backup
                     </p>
                   </div>
                 </button>
 
                 <button
                   onClick={handleCopyWhatsAppText}
-                  className="w-full px-3 py-2.5 text-left flex items-start gap-2.5 hover:bg-orange-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
+                  className="w-full px-3.5 py-2 text-left flex items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition cursor-pointer text-slate-800 dark:text-slate-200"
                 >
                   <Copy className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
                   <div>
-                    <div className="font-bold text-slate-900 dark:text-white">Salin Format Teks WA</div>
+                    <div className="font-bold text-slate-900 dark:text-white">Salin Teks WhatsApp</div>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Daftar rapi dengan emoji siap tempel ke grup WhatsApp
+                      Format daftar rapi siap kirim ke WA
                     </p>
                   </div>
                 </button>
@@ -263,7 +288,7 @@ export const MembersView: React.FC = () => {
                     setIsExportMenuOpen(false);
                     window.print();
                   }}
-                  className="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-slate-700 dark:text-slate-300 font-semibold"
+                  className="w-full px-3.5 py-2 text-left flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer text-slate-700 dark:text-slate-300 font-semibold"
                 >
                   <Printer className="w-4 h-4 text-slate-400" />
                   <span>Cetak Dokumen Fisik / PDF</span>
@@ -275,12 +300,12 @@ export const MembersView: React.FC = () => {
           {/* Import Drag & Drop Button for Admin & Bendahara */}
           {canManage && (
             <button
-              onClick={() => setIsImportModalOpen(true)}
+              onClick={openImportModal}
               className="px-3.5 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
               title="Unggah dan impor file CSV / Excel data anggota"
             >
               <UploadCloud className="w-4 h-4" />
-              <span>Impor (Drag & Drop)</span>
+              <span>Impor Wizard</span>
             </button>
           )}
 
@@ -634,12 +659,6 @@ export const MembersView: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {/* Drag & Drop Member Import Modal */}
-      <MemberImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-      />
     </div>
   );
 };

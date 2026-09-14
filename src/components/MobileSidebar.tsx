@@ -15,8 +15,8 @@ import {
   Moon,
   RefreshCw,
   Search,
-  Calendar,
-  UserCheck,
+  UserCog,
+  LogOut,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../context/AppContext';
 
@@ -37,14 +37,23 @@ export const MobileSidebar: React.FC = () => {
     verificationRequests,
     isLiveSyncing,
     triggerLiveSync,
+    isMasterAdmin,
+    isPengurus,
+    logout,
   } = useApp();
 
   const pendingCount = verificationRequests.filter((v) => v.status === 'pending').length;
 
-  const navItems: { id: NavigationTab; label: string; icon: React.ReactNode; badge?: number }[] = [
+  const navItems: { id: NavigationTab; label: string; icon: React.ReactNode; badge?: number; hidden?: boolean }[] = [
     { id: 'beranda', label: 'Beranda Utama', icon: <Building2 className="w-4 h-4" /> },
     { id: 'tentang', label: 'Tentang Paguyuban', icon: <ShieldCheck className="w-4 h-4" /> },
     { id: 'anggota', label: 'Master Data Anggota', icon: <Users className="w-4 h-4" /> },
+    {
+      id: 'pengguna',
+      label: 'Manajemen Pengguna',
+      icon: <UserCog className="w-4 h-4" />,
+      hidden: !isMasterAdmin && !isPengurus,
+    },
     {
       id: 'iuran',
       label: 'Iuran & Verifikasi Kas',
@@ -97,8 +106,8 @@ export const MobileSidebar: React.FC = () => {
     <>
       {/* 
         TRIGGER BUTTON ON MOBILE:
-        Fixed at middle-left of the phone screen.
-        Cukup hamburger di tengah dan garis tegak atas dan bawah.
+        Fixed at middle-left of the screen.
+        Hamburger di tengah dan garis tegak atas dan bawah yang elegan.
       */}
       {!isMobileSidebarOpen && (
         <button
@@ -111,7 +120,7 @@ export const MobileSidebar: React.FC = () => {
           {/* Garis tegak atas */}
           <span className="w-[3px] flex-1 bg-white/75 group-hover:bg-white rounded-full transition-colors" />
 
-          {/* Hamburger di tengah dengan latar aksen halus */}
+          {/* Hamburger di tengah */}
           <div className="w-5 h-5 my-1.5 flex items-center justify-center rounded-lg bg-black/15 group-hover:bg-black/25 transition-colors">
             <Menu className="w-3.5 h-3.5 text-white shrink-0 group-hover:scale-110 transition-transform" />
           </div>
@@ -121,7 +130,7 @@ export const MobileSidebar: React.FC = () => {
         </button>
       )}
 
-      {/* Backdrop: automatically closes sidebar when clicked outside */}
+      {/* Backdrop */}
       {isMobileSidebarOpen && (
         <div
           id="mobile-sidebar-backdrop"
@@ -194,7 +203,7 @@ export const MobileSidebar: React.FC = () => {
           </button>
         </div>
 
-        {/* Scrollable Body: Navigation & Content */}
+        {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-3.5 space-y-4">
           {/* Quick Search */}
           <div className="relative">
@@ -212,16 +221,16 @@ export const MobileSidebar: React.FC = () => {
           <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <img
-                src={currentProfile.avatarUrl}
-                alt={currentProfile.name}
+                src={currentProfile.fotoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80'}
+                alt={currentProfile.nama}
                 className="w-8 h-8 rounded-full object-cover ring-1 ring-orange-500 shrink-0"
               />
-              <div>
-                <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                  {currentProfile.name}
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">
+                  {currentProfile.nama}
                 </div>
                 <div className="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase mt-0.5">
-                  {currentProfile.role} • {currentProfile.title}
+                  {currentProfile.role} • {currentProfile.jabatan}
                 </div>
               </div>
             </div>
@@ -233,48 +242,50 @@ export const MobileSidebar: React.FC = () => {
               Menu Navigasi
             </span>
 
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setIsMobileSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className={isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}>
-                      {item.icon}
-                    </span>
-                    <span>{item.label}</span>
-                  </div>
+            {navItems
+              .filter((item) => !item.hidden)
+              .map((item) => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className={isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}>
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                    </div>
 
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span
-                      className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
-                        isActive
-                          ? 'bg-white text-red-600'
-                          : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
-                      }`}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span
+                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                          isActive
+                            ? 'bg-white text-red-600'
+                            : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
           </div>
 
           {/* Quick RBAC Role Switcher */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 px-2 block">
-              Ganti Peran Pengguna (RBAC)
+              Ganti Akun Pengguna (RBAC)
             </span>
             <div className="grid grid-cols-2 gap-1.5">
               {profiles.map((p) => {
@@ -291,7 +302,7 @@ export const MobileSidebar: React.FC = () => {
                         : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
                     }`}
                   >
-                    <span className="font-bold truncate">{p.name.split(' ')[0]}</span>
+                    <span className="font-bold truncate">{p.nama.split(' ')[0]}</span>
                     <span className="text-[9px] uppercase text-slate-400">{p.role}</span>
                   </button>
                 );
@@ -300,10 +311,10 @@ export const MobileSidebar: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer Utilities (Theme & Live Sync) */}
+        {/* Footer Utilities */}
         <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900 shrink-0 space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-medium text-[11px]">Tema Tampilan:</span>
+            <span className="text-slate-500 font-medium text-[11px]">Tema:</span>
             <div className="flex items-center bg-white dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs">
               <button
                 id="mobile-theme-light-btn"
@@ -345,10 +356,16 @@ export const MobileSidebar: React.FC = () => {
             <span>{isLiveSyncing ? 'Menyinkronkan...' : 'Sinkronkan Google Sheets'}</span>
           </button>
 
-          <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 pt-1">
-            <span>T.A. 2026 • Dinkes Malang</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">Online</span>
-          </div>
+          <button
+            onClick={() => {
+              setIsMobileSidebarOpen(false);
+              logout();
+            }}
+            className="w-full py-1.5 px-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Keluar Sesi</span>
+          </button>
         </div>
       </aside>
     </>
