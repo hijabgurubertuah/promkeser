@@ -94,7 +94,7 @@ export const DashboardView: React.FC = () => {
       {/* Top Header Title & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="w-1.5 h-6 bg-red-600 rounded-full inline-block"></span>
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Dashboard Utama SIPAG
@@ -115,7 +115,7 @@ export const DashboardView: React.FC = () => {
         </div>
 
         {/* Theme & Backup Toolbar */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Theme Switcher Button Group */}
           <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
             <button
@@ -174,10 +174,10 @@ export const DashboardView: React.FC = () => {
             </div>
 
             {/* Quick Action Buttons on Banner */}
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full sm:w-auto">
               <button
                 onClick={() => setActiveTab('iuran')}
-                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 cursor-pointer transition transform hover:-translate-y-0.5"
+                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-2 cursor-pointer transition transform hover:-translate-y-0.5"
               >
                 <span>Verifikasi Pembayaran</span>
                 {totalPendingCount > 0 && (
@@ -189,7 +189,7 @@ export const DashboardView: React.FC = () => {
 
               <button
                 onClick={() => openAddTxModal('pengeluaran')}
-                className="px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer transition"
+                className="px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition"
               >
                 <Wallet className="w-4 h-4 text-orange-500" />
                 <span>Catat Transaksi Kas</span>
@@ -321,8 +321,8 @@ export const DashboardView: React.FC = () => {
             </div>
 
             {/* Custom Responsive SVG Chart */}
-            <div className="mt-6 pt-4">
-              <div className="h-56 flex items-end justify-between gap-2 sm:gap-4 px-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="mt-6 pt-4 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
+              <div className="h-56 min-w-[380px] sm:min-w-0 flex items-end justify-between gap-2 sm:gap-4 px-2 border-b border-slate-100 dark:border-slate-800">
                 {monthlyData.map((d, idx) => {
                   // Normalize height with max 5.200.000 = 100%
                   const maxVal = 5200000;
@@ -658,17 +658,17 @@ export const DashboardView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             <input
               type="text"
               value={txFilter}
               onChange={(e) => setTxFilter(e.target.value)}
               placeholder="Filter mutasi atau puskesmas..."
-              className="px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+              className="w-full sm:w-60 px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
             />
             <button
               onClick={handleExportPDF}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition"
+              className="w-full sm:w-auto justify-center px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer transition"
             >
               <FileDown className="w-3.5 h-3.5" />
               <span>Ekspor PDF</span>
@@ -677,8 +677,8 @@ export const DashboardView: React.FC = () => {
         </div>
 
         {/* Responsive Table */}
-        <div className="overflow-x-auto mt-2">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0 mt-2">
+          <table className="w-full min-w-[700px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
                 <th className="py-3 px-3">NO. REF / ID</th>

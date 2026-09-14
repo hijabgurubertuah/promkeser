@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
+import { MobileSidebar } from './components/MobileSidebar';
 import { Footer } from './components/Footer';
 import { DashboardView } from './components/views/DashboardView';
 import { AboutView } from './components/views/AboutView';
@@ -24,7 +25,7 @@ const MainContent: React.FC = () => {
   const { activeTab } = useApp();
 
   return (
-    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
       {activeTab === 'beranda' && <DashboardView />}
       {activeTab === 'tentang' && <AboutView />}
       {activeTab === 'anggota' && <MembersView />}
@@ -56,6 +57,7 @@ export default function App() {
     <AppProvider>
       <div className="min-h-screen flex flex-col bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased font-sans transition-colors selection:bg-orange-500 selection:text-white">
         <Header />
+        <MobileSidebar />
         <MainContent />
         <Footer />
 

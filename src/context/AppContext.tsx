@@ -47,6 +47,9 @@ interface AppContextType {
   // Navigation & User
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
+  isMobileSidebarOpen: boolean;
+  setIsMobileSidebarOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
   currentProfile: UserProfile;
   setCurrentProfile: (profile: UserProfile) => void;
   profiles: UserProfile[];
@@ -129,6 +132,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<NavigationTab>('beranda');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const toggleMobileSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
   const [currentProfile, setCurrentProfile] = useState<UserProfile>(initialProfiles[0]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [searchQuery, setSearchQuery] = useState('');
@@ -518,6 +523,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         activeTab,
         setActiveTab,
+        isMobileSidebarOpen,
+        setIsMobileSidebarOpen,
+        toggleMobileSidebar,
         currentProfile,
         setCurrentProfile,
         profiles: initialProfiles,

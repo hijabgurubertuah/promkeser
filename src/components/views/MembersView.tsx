@@ -101,7 +101,7 @@ export const MembersView: React.FC = () => {
         {canAdd && (
           <button
             onClick={() => setIsAddFormOpen(!isAddFormOpen)}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+            className="w-full sm:w-auto justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
           >
             <UserPlus className="w-4 h-4" />
             <span>Tambah Anggota Baru</span>

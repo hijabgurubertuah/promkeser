@@ -78,17 +78,17 @@ export const FinanceView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => openAddTxModal('pemasukan')}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition"
           >
             <Plus className="w-4 h-4" />
             <span>Catat Pemasukan</span>
           </button>
           <button
             onClick={() => openAddTxModal('pengeluaran')}
-            className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+            className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition"
           >
             <Minus className="w-4 h-4" />
             <span>Catat Pengeluaran</span>
@@ -148,47 +148,47 @@ export const FinanceView: React.FC = () => {
       <div className="bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs p-5 space-y-4">
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-semibold">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-semibold overflow-x-auto no-scrollbar max-w-full">
             <button
               onClick={() => setFilterType('all')}
-              className={`px-3 py-1.5 rounded-md cursor-pointer transition ${
+              className={`px-3 py-1.5 rounded-md cursor-pointer transition whitespace-nowrap ${
                 filterType === 'all'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              Semua Mutasi ({transactions.length})
+              Semua ({transactions.length})
             </button>
             <button
               onClick={() => setFilterType('pemasukan')}
-              className={`px-3 py-1.5 rounded-md cursor-pointer transition ${
+              className={`px-3 py-1.5 rounded-md cursor-pointer transition whitespace-nowrap ${
                 filterType === 'pemasukan'
                   ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-2xs'
                   : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              Debet (Pemasukan)
+              Debet
             </button>
             <button
               onClick={() => setFilterType('pengeluaran')}
-              className={`px-3 py-1.5 rounded-md cursor-pointer transition ${
+              className={`px-3 py-1.5 rounded-md cursor-pointer transition whitespace-nowrap ${
                 filterType === 'pengeluaran'
                   ? 'bg-white dark:bg-slate-700 text-red-600 shadow-2xs'
                   : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              Kredit (Pengeluaran)
+              Kredit
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative w-full sm:w-56">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-52 min-w-[140px]">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari uraian, satker..."
+                placeholder="Cari uraian..."
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
               />
             </div>
@@ -198,7 +198,7 @@ export const FinanceView: React.FC = () => {
               onChange={(e) => setCategoryFilter(e.target.value)}
               className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-300"
             >
-              <option value="all">Semua Kategori</option>
+              <option value="all">Kategori</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -208,18 +208,18 @@ export const FinanceView: React.FC = () => {
 
             <button
               onClick={handleExportCSV}
-              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               title="Unduh file Excel/CSV"
             >
               <FileDown className="w-3.5 h-3.5" />
-              <span>Ekspor CSV</span>
+              <span>CSV</span>
             </button>
           </div>
         </div>
 
         {/* Mutasi Ledger Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[760px] text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-400 text-[10px] uppercase font-bold tracking-wider">
                 <th className="py-3 px-3">NO. REF</th>
