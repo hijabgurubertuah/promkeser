@@ -98,7 +98,7 @@ export const MobileSidebar: React.FC = () => {
       {/* 
         TRIGGER BUTTON ON MOBILE:
         Fixed at middle-left of the phone screen.
-        Cukup hamburger di tengah dan garis tegak atas dan bawah. Yang lain hapus.
+        Cukup hamburger di tengah dan garis tegak atas dan bawah.
       */}
       {!isMobileSidebarOpen && (
         <button
@@ -106,16 +106,18 @@ export const MobileSidebar: React.FC = () => {
           onClick={toggleMobileSidebar}
           aria-label="Buka Menu Navigasi SIPAG"
           title="Buka Menu Navigasi"
-          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 md:hidden w-[22px] h-[84px] bg-gradient-to-b from-red-600 via-orange-500 to-amber-500 text-white rounded-r-xl shadow-lg shadow-orange-600/30 flex flex-col items-center justify-between py-2.5 border-y border-r border-orange-300/40 hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer select-none group"
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 md:hidden w-7 hover:w-8 h-24 bg-gradient-to-b from-red-600 via-rose-500 to-orange-500 text-white rounded-r-2xl shadow-xl shadow-red-900/30 dark:shadow-black/50 flex flex-col items-center justify-between py-3 border-y border-r border-white/30 dark:border-white/20 hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer select-none group touch-manipulation"
         >
           {/* Garis tegak atas */}
-          <span className="w-0.5 flex-1 bg-white/75 rounded-full" />
+          <span className="w-[3px] flex-1 bg-white/75 group-hover:bg-white rounded-full transition-colors" />
 
-          {/* Hamburger di tengah */}
-          <Menu className="w-3.5 h-3.5 text-white my-1 shrink-0 group-hover:scale-110 transition-transform" />
+          {/* Hamburger di tengah dengan latar aksen halus */}
+          <div className="w-5 h-5 my-1.5 flex items-center justify-center rounded-lg bg-black/15 group-hover:bg-black/25 transition-colors">
+            <Menu className="w-3.5 h-3.5 text-white shrink-0 group-hover:scale-110 transition-transform" />
+          </div>
 
           {/* Garis tegak bawah */}
-          <span className="w-0.5 flex-1 bg-white/75 rounded-full" />
+          <span className="w-[3px] flex-1 bg-white/75 group-hover:bg-white rounded-full transition-colors" />
         </button>
       )}
 
