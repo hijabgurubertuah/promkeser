@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   UserProfile,
   MasterPengguna,
@@ -77,12 +77,6 @@ interface AppContextType {
   setTheme: (theme: 'light' | 'dark') => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  isLiveSyncing: boolean;
-  triggerLiveSync: () => void;
-  googleSheetUrl: string;
-  setGoogleSheetUrl: (url: string) => void;
-  lastSyncTime: string | null;
-
   // Master Data
   members: Member[];
   puskesmasList: MasterPuskesmas[];
@@ -207,19 +201,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   }, []);
-
-  // Google Sheets integration state
-  const [googleSheetUrl, setGoogleSheetUrlState] = useState<string>(() => {
-    return localStorage.getItem('sipag_gsheet_url') || '';
-  });
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(() => {
-    return localStorage.getItem('sipag_gsheet_last_sync') || null;
-  });
-
-  const setGoogleSheetUrl = (url: string) => {
-    setGoogleSheetUrlState(url);
-    localStorage.setItem('sipag_gsheet_url', url);
-  };
 
   // Storage states with initial fallbacks
   const [members, setMembers] = useState<Member[]>(() => {
@@ -475,45 +456,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       minute: '2-digit',
     }) + ' WIB';
 
-    if (googleSheetUrl && googleSheetUrl.trim().startsWith('http')) {
-      showToast('Menghubungi endpoint Google Sheets & merekonsiliasi mutasi kas...');
-
-      if (googleSheetUrl.includes('script.google.com') || googleSheetUrl.includes('webhook')) {
-        try {
-          await fetch(googleSheetUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              app: 'SIPAG_PROMKES_MALANG',
-              timestamp: new Date().toISOString(),
-              totalSaldo,
-              transactions,
-              members,
-            }),
-          });
-        } catch (e) {
-          console.warn('Webhook sync ping failed:', e);
-        }
-      }
-
-      setTimeout(() => {
-        setIsLiveSyncing(false);
-        setLastSyncTime(nowFormatted);
-        localStorage.setItem('sipag_gsheet_last_sync', nowFormatted);
-        showToast(`Sinkronisasi Sukses! Data kas & iuran diperbarui sesuai spreadsheet pada ${nowFormatted}.`);
-        addAuditLog('Sinkronisasi Google Sheets', 'Spreadsheet Terhubung', `Rekonsiliasi kas (${nowFormatted})`);
-      }, 900);
-    } else {
-      // Local reconciliation
-      setTimeout(() => {
-        setIsLiveSyncing(false);
-        setLastSyncTime(nowFormatted);
-        localStorage.setItem('sipag_gsheet_last_sync', nowFormatted);
-        showToast('Sinkronisasi lokal selesai! Buka menu Pengaturan untuk menautkan URL Google Sheets Anda.');
-        addAuditLog('Sinkronisasi Data Lokal', 'Memori Kas & Anggota', `Rekonsiliasi internal (${nowFormatted})`);
-      }, 700);
-    }
+    setTimeout(() => {
+      setIsLiveSyncing(false);
+      showToast('Sinkronisasi lokal selesai!');
+      addAuditLog('Sinkronisasi Data Lokal', 'Memori Kas & Anggota', `Rekonsiliasi internal (${nowFormatted})`);
+    }, 700);
   };
 
   // Financial Computations dynamically based on PRD baseline + user additions
@@ -868,11 +815,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTheme,
         searchQuery,
         setSearchQuery,
-        isLiveSyncing,
-        triggerLiveSync,
-        googleSheetUrl,
-        setGoogleSheetUrl,
-        lastSyncTime,
 
         members,
         puskesmasList,
