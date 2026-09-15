@@ -47,6 +47,7 @@ export const FinanceView: React.FC = () => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [monthFilter, setMonthFilter] = useState('all');
+  const [yearFilter, setYearFilter] = useState('all');
   const [selectedTx, setSelectedTx] = useState<(CashTransaction & { calculatedBalance: number }) | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState<string | null>(null);
@@ -73,11 +74,22 @@ export const FinanceView: React.FC = () => {
     });
   }, [transactions, totalSaldo]);
 
+  // Extract distinct years from transactions
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    transactions.forEach((t) => {
+      const match = t.tanggal.match(/\b(20\d\d)\b/);
+      if (match) {
+        years.add(match[1]);
+      }
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [transactions]);
+
   // Extract distinct months from transactions (e.g., 'Okt 2026', 'Sep 2026')
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
     transactions.forEach((t) => {
-      // t.tanggal typically '17 Okt 2026' or '17/10/2026'
       const parts = t.tanggal.split(' ');
       if (parts.length >= 3) {
         months.add(`${parts[1]} ${parts[2]}`);
@@ -97,6 +109,9 @@ export const FinanceView: React.FC = () => {
       const matchMonth =
         monthFilter === 'all' ||
         t.tanggal.toLowerCase().includes(monthFilter.toLowerCase());
+      const matchYear =
+        yearFilter === 'all' ||
+        t.tanggal.includes(yearFilter);
       const query = search.trim().toLowerCase();
       const matchSearch =
         !query ||
@@ -106,9 +121,9 @@ export const FinanceView: React.FC = () => {
         t.kategori.toLowerCase().includes(query) ||
         (t.dibuatOleh && t.dibuatOleh.toLowerCase().includes(query));
 
-      return matchType && matchCat && matchMonth && matchSearch;
+      return matchType && matchCat && matchMonth && matchYear && matchSearch;
     });
-  }, [transactionsWithBalance, filterType, categoryFilter, monthFilter, search]);
+  }, [transactionsWithBalance, filterType, categoryFilter, monthFilter, yearFilter, search]);
 
   // Filtered totals
   const filteredDebet = useMemo(
@@ -238,13 +253,15 @@ export const FinanceView: React.FC = () => {
 
         <div className="bg-white dark:bg-slate-850 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Akumulasi Debet (Masuk)</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Total Debet ({yearFilter === 'all' ? 'Semua Tahun' : `Tahun ${yearFilter}`})
+            </span>
             <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <ArrowDownRight className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
-            Rp {totalPemasukan2026.toLocaleString('id-ID')}
+            Rp {filteredDebet.toLocaleString('id-ID')}
           </div>
           <div className="mt-2 text-[11px] text-slate-400">
             Iuran Rutin Triwulan & Pelunasan Tunggakan
@@ -253,13 +270,15 @@ export const FinanceView: React.FC = () => {
 
         <div className="bg-white dark:bg-slate-850 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Akumulasi Kredit (Keluar)</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Total Kredit ({yearFilter === 'all' ? 'Semua Tahun' : `Tahun ${yearFilter}`})
+            </span>
             <span className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
               <ArrowUpRight className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 text-2xl font-extrabold font-mono text-red-600 dark:text-red-400">
-            Rp {totalPengeluaran2026.toLocaleString('id-ID')}
+            Rp {filteredKredit.toLocaleString('id-ID')}
           </div>
           <div className="mt-2 text-[11px] text-slate-400">
             Realisasi Musda, Pelatihan KAP & Operasional
@@ -327,6 +346,20 @@ export const FinanceView: React.FC = () => {
                 </button>
               )}
             </div>
+
+            {/* Year Filter */}
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 dark:bg-slate-800 dark:text-amber-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+            >
+              <option value="all">Semua Tahun</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  Tahun {yr}
+                </option>
+              ))}
+            </select>
 
             {/* Month Filter */}
             {availableMonths.length > 0 && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Wallet,
   ArrowDownRight,
@@ -58,6 +58,31 @@ export const DashboardView: React.FC = () => {
   } = useApp();
 
   const [txFilter, setTxFilter] = useState('');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    transactions.forEach((t) => {
+      const match = t.tanggal.match(/\b(20\d\d)\b/);
+      if (match) {
+        years.add(match[1]);
+      }
+    });
+    const arr = Array.from(years).sort((a, b) => b.localeCompare(a));
+    return arr;
+  }, [transactions]);
+
+  const dashboardPemasukan = useMemo(() => {
+    return transactions
+      .filter((t) => t.jenis === 'pemasukan' && (selectedYear === 'all' || t.tanggal.includes(selectedYear)))
+      .reduce((sum, t) => sum + t.nominal, 0);
+  }, [transactions, selectedYear]);
+
+  const dashboardPengeluaran = useMemo(() => {
+    return transactions
+      .filter((t) => t.jenis === 'pengeluaran' && (selectedYear === 'all' || t.tanggal.includes(selectedYear)))
+      .reduce((sum, t) => sum + t.nominal, 0);
+  }, [transactions, selectedYear]);
 
   const pendingList = verificationRequests.filter((v) => v.status === 'pending');
 
@@ -99,61 +124,7 @@ export const DashboardView: React.FC = () => {
             <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Dashboard Utama SIPAG
             </h1>
-            <span
-              onClick={triggerLiveSync}
-              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 transition"
-              title="Klik untuk menyinkronkan ulang dengan Google Sheets"
-            >
-              <span className={`w-1.5 h-1.5 rounded-full bg-emerald-500 ${isLiveSyncing ? 'animate-ping' : ''}`}></span>
-              <span>{isLiveSyncing ? 'Menyinkronkan...' : 'Live Sync GSheets'}</span>
-              <RefreshCw className={`w-3 h-3 ml-0.5 ${isLiveSyncing ? 'animate-spin' : ''}`} />
-            </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 pl-3.5">
-            Tata Kelola Keuangan & Akuntabilitas Fungsional Promkeser Kabupaten Malang
-          </p>
-        </div>
-
-        {/* Theme & Backup Toolbar */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Theme Switcher Button Group */}
-          <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
-            <button
-              id="dashboard-theme-light-btn"
-              onClick={() => setTheme('light')}
-              aria-label="Aktifkan Mode Terang"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold cursor-pointer transition ${
-                theme === 'light'
-                  ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-            >
-              <Sun className="w-3.5 h-3.5 text-amber-500" />
-              <span>Terang</span>
-            </button>
-            <button
-              id="dashboard-theme-dark-btn"
-              onClick={() => setTheme('dark')}
-              aria-label="Aktifkan Mode Gelap"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-bold cursor-pointer transition ${
-                theme === 'dark'
-                  ? 'bg-slate-700 text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-              }`}
-            >
-              <Moon className="w-3.5 h-3.5 text-indigo-300" />
-              <span>Gelap</span>
-            </button>
-          </div>
-
-          {/* Backup Button */}
-          <button
-            onClick={backupDataToJSON}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs cursor-pointer transition"
-          >
-            <Database className="w-3.5 h-3.5 text-orange-500" />
-            <span>Cadangkan Data</span>
-          </button>
         </div>
       </div>
 
@@ -161,12 +132,24 @@ export const DashboardView: React.FC = () => {
       <div className="bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-slate-850 dark:via-slate-900 dark:to-slate-850 rounded-2xl p-6 border border-red-100 dark:border-slate-800 shadow-xs relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              TAHUN ANGGARAN 2026
-            </span>
+            <div className="flex items-center gap-1 bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span>FILTER TAHUN:</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="bg-transparent font-extrabold cursor-pointer border-none focus:outline-none"
+              >
+                <option value="all" className="text-slate-900 dark:text-slate-100">SEMUA TAHUN</option>
+                {availableYears.map((yr) => (
+                  <option key={yr} value={yr} className="text-slate-900 dark:text-slate-100">
+                    TAHUN {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
             <span className="text-slate-400 text-[11px]">•</span>
             <span className="text-slate-500 dark:text-slate-400 text-xs flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Terakhir diperbarui: 18 Okt 2026, 09:42 WIB
+              <Clock className="w-3 h-3" /> Rekap Keuangan Terpadu Multi-Tahun
             </span>
           </div>
 
@@ -228,37 +211,41 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: Total Pemasukan 2026 */}
+        {/* Card 2: Total Pemasukan */}
         <div className="bg-white dark:bg-slate-850 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Pemasukan 2026</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Pemasukan ({selectedYear === 'all' ? 'Semua Tahun' : `Thn ${selectedYear}`})
+            </span>
             <span className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <ArrowDownRight className="w-3.5 h-3.5" />
             </span>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-slate-900 dark:text-white font-mono tracking-tight">
-            Rp {totalPemasukan2026.toLocaleString('id-ID')}
+          <div className="mt-2 text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+            Rp {dashboardPemasukan.toLocaleString('id-ID')}
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Reguler 2026: <b className="text-slate-700 dark:text-slate-300">Rp 7.730.000</b></span>
-            <span className="text-emerald-600 font-bold">+Rp 720.000 (Pelunasan 2025)</span>
+            <span>Kas Masuk</span>
+            <span className="text-emerald-600 font-bold">Terverifikasi</span>
           </div>
         </div>
 
-        {/* Card 3: Total Pengeluaran 2026 */}
+        {/* Card 3: Total Pengeluaran */}
         <div className="bg-white dark:bg-slate-850 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Pengeluaran 2026</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Pengeluaran ({selectedYear === 'all' ? 'Semua Tahun' : `Thn ${selectedYear}`})
+            </span>
             <span className="w-6 h-6 rounded-md bg-red-50 text-red-600 flex items-center justify-center">
               <ArrowUpRight className="w-3.5 h-3.5" />
             </span>
           </div>
-          <div className="mt-2 text-xl font-extrabold text-slate-900 dark:text-white font-mono tracking-tight">
-            Rp {totalPengeluaran2026.toLocaleString('id-ID')}
+          <div className="mt-2 text-xl font-extrabold text-red-600 dark:text-red-400 font-mono tracking-tight">
+            Rp {dashboardPengeluaran.toLocaleString('id-ID')}
           </div>
           <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Musda & Pelatihan KIE</span>
-            <span className="text-orange-600 font-bold">68.5% Rasio Kas</span>
+            <span>Realisasi Kas</span>
+            <span className="text-slate-500 font-bold">RAB Operasional</span>
           </div>
         </div>
 
