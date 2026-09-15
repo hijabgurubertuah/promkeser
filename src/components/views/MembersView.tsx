@@ -336,9 +336,9 @@ export const MembersView: React.FC = () => {
           onDrop={(e) => {
             e.preventDefault();
             setIsQuickDragOver(false);
-            setIsImportModalOpen(true);
+            openImportModal();
           }}
-          onClick={() => setIsImportModalOpen(true)}
+          onClick={() => openImportModal()}
           className={`p-4 rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-2xs ${
             isQuickDragOver
               ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 ring-4 ring-orange-500/20 scale-[1.005]'

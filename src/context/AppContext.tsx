@@ -160,7 +160,9 @@ interface AppContextType {
 
   // Notification Toast
   toastMessage: string | null;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, type?: 'success' | 'error') => void;
+
+  importCsvData: (members: Member[], transactions: CashTransaction[]) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -200,6 +202,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState('');
   const [isLiveSyncing, setIsLiveSyncing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string, type?: 'success' | 'error') => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  }, []);
 
   // Google Sheets integration state
   const [googleSheetUrl, setGoogleSheetUrlState] = useState<string>(() => {
@@ -310,12 +317,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [theme]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4000);
-  };
+  const importCsvData = useCallback((newMembers: Member[], newTransactions: CashTransaction[]) => {
+    // 1. Deduplicate members by name
+    setMembers((prev) => {
+      const map = new Map(prev.map((m) => [m.nama.toLowerCase().trim(), m]));
+      let added = 0;
+      newMembers.forEach((nm) => {
+        if (!map.has(nm.nama.toLowerCase().trim())) {
+          map.set(nm.nama.toLowerCase().trim(), nm);
+          added++;
+        }
+      });
+      return Array.from(map.values());
+    });
+
+    // 2. Deduplicate transactions by combination of tanggal + uraian + nominal
+    setTransactions((prev) => {
+      const map = new Map(prev.map((t) => [`${t.tanggal}-${t.uraian.toLowerCase().trim()}-${t.nominal}`, t]));
+      let added = 0;
+      newTransactions.forEach((nt) => {
+        const key = `${nt.tanggal}-${nt.uraian.toLowerCase().trim()}-${nt.nominal}`;
+        if (!map.has(key)) {
+          map.set(key, nt);
+          added++;
+        }
+      });
+      
+      const newMergedTrx = Array.from(map.values()) as CashTransaction[];
+      newMergedTrx.sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+      
+      showToast(`Berhasil menyinkronkan data CSV! (${added} transaksi baru ditambahkan)`, 'success');
+      return newMergedTrx;
+    });
+  }, [showToast]);
 
   const addAuditLog = (aksi: string, entitas: string, detail: string) => {
     const newLog: AuditLogItem = {
@@ -902,6 +936,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isExportModalOpen,
         openExportModal,
         closeExportModal,
+
+        importCsvData,
 
         toastMessage,
         showToast,

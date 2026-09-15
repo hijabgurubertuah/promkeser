@@ -24,6 +24,8 @@ import { AddActivityModal } from './components/modals/AddActivityModal';
 import { MemberImportWizardModal } from './components/modals/MemberImportWizardModal';
 import { MemberExportModal } from './components/modals/MemberExportModal';
 
+import { CsvDropzone } from './components/CsvDropzone';
+
 const MainContent: React.FC = () => {
   const { activeTab, isMasterAdmin, isPengurus } = useApp();
 
@@ -74,7 +76,9 @@ const AppShell: React.FC = () => {
 export default function App() {
   return (
     <AppProvider>
-      <AppShell />
+      <CsvDropzone>
+        <AppShell />
+      </CsvDropzone>
     </AppProvider>
   );
 }
